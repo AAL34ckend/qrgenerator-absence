@@ -3,7 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
     <title>Generator QR Code Absensi Toko</title>
     <style>
       body {
@@ -88,14 +87,16 @@
       </select>
 
       <p class="loading-message" id="loadingMessage"></p>
+      <div id="errorMessage" class="hidden" style="color: red; text-align: center;"></div>
 
-      <button onclick="generateQrCode()">Buat QR Code</button>
+      <button id="generateBtn" onclick="generateQrCode()">Buat QR Code</button>
 
-      <div id="outputUrl">
-        <p>URL akan muncul di sini.</p>
+      <div id="outputUrl" class="hidden">
+        <p><b>URL QR Code:</b></p>
+        <p id="urlText"></p>
       </div>
 
-      <div id="qr-code-container">
+      <div id="qr-code-container" class="hidden">
         <p>QR Code akan muncul di bawah ini.</p>
         <div id="qrcode"></div>
       </div>
@@ -106,8 +107,6 @@
       const appsScriptUrl =
         "https://script.google.com/macros/s/AKfycbz9rczn07E29LnlK_hT1XizTHm7V_bZnqOq8Cevd0fjNFg7JO63-aSmnCmXTX_kjw9t0g/exec";
 
-      const githubPageUrl = "https://aal34ckend.github.io/badboy-absence/";
-
       window.onload = function () {
         fetchStoresAndPopulateDropdown();
       };
@@ -115,16 +114,17 @@
       async function fetchStoresAndPopulateDropdown() {
         const storeSelect = document.getElementById("storeSelect");
         const loadingMessage = document.getElementById("loadingMessage");
+        const errorMessage = document.getElementById("errorMessage");
 
         loadingMessage.innerText = "Mengambil data toko...";
+        errorMessage.classList.add("hidden");
+        storeSelect.disabled = true;
 
         try {
-          const response = await fetch(`${appsScriptUrl}?storeId=all`);
+          const response = await fetch(`${appsScriptUrl}?api=stores`);
 
           if (!response.ok) {
-            throw new Error(
-              `Kesalahan Jaringan: ${response.status} ${response.statusText}`
-            );
+            throw new Error(`Kesalahan Jaringan: ${response.status} ${response.statusText}`);
           }
 
           const stores = await response.json();
@@ -133,16 +133,11 @@
           if (!Array.isArray(stores) || stores.length === 0) {
             storeSelect.innerHTML =
               '<option value="" disabled selected>Tidak ada data toko atau format data salah.</option>';
-            loadingMessage.innerText = "Error: Data toko tidak valid.";
-            storeSelect.disabled = true;
-            return;
+            throw new Error("Data toko tidak valid atau kosong.");
           }
 
           storeSelect.innerHTML = "";
-          storeSelect.disabled = false;
-
           stores.forEach((store) => {
-            // Mengakses data menggunakan kunci yang distandardisasi
             if (store.id && store.nama_store) {
               const option = document.createElement("option");
               option.value = store.id;
@@ -152,30 +147,38 @@
           });
 
           loadingMessage.innerText = "";
+          storeSelect.disabled = false;
         } catch (error) {
           console.error("Kesalahan saat mengambil data toko:", error);
           storeSelect.innerHTML =
             '<option value="" disabled selected>Error: Gagal memuat data.</option>';
-          loadingMessage.innerText = `Error: Gagal memuat data toko. ${error.message}`;
-          storeSelect.disabled = true;
+          errorMessage.innerText = `Error: Gagal memuat data toko. ${error.message}`;
+          errorMessage.classList.remove("hidden");
         }
       }
 
       function generateQrCode() {
         const storeSelect = document.getElementById("storeSelect");
         const storeId = storeSelect.value;
+        const outputUrlDiv = document.getElementById("outputUrl");
+        const urlTextP = document.getElementById("urlText");
+        const qrCodeContainer = document.getElementById("qr-code-container");
+        const errorMessage = document.getElementById("errorMessage");
 
         if (!storeId) {
-          alert("Silakan pilih toko terlebih dahulu.");
+          errorMessage.innerText = "Silakan pilih toko terlebih dahulu.";
+          errorMessage.classList.remove("hidden");
           return;
         }
 
-        const fullUrl = `${githubPageUrl}?storeId=${storeId}`;
-
-        const outputDiv = document.getElementById("outputUrl");
-        outputDiv.innerHTML = `<p><b>URL QR Code:</b></p><p>${fullUrl}</p>`;
+        // URL QR code akan mengarah ke URL Apps Script dengan parameter storeId
+        const fullUrl = `${appsScriptUrl}?storeId=${storeId}`;
+        
+        urlTextP.innerText = fullUrl;
+        outputUrlDiv.classList.remove("hidden");
 
         document.getElementById("qrcode").innerHTML = "";
+        qrCodeContainer.classList.remove("hidden");
 
         new QRCode(document.getElementById("qrcode"), {
           text: fullUrl,
