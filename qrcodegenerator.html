@@ -1,194 +1,147 @@
 <!DOCTYPE html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Generator QR Code Absensi Toko</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        padding: 20px;
-        max-width: 600px;
-        margin: auto;
-        background-color: #f4f4f9;
-        color: #333;
-      }
-      .container {
-        background-color: #fff;
-        padding: 25px;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      }
-      h1 {
-        text-align: center;
-        color: #007bff;
-      }
-      label {
-        display: block;
-        margin-top: 15px;
-        font-weight: bold;
-      }
-      select,
-      input[type="text"] {
-        width: 100%;
-        padding: 10px;
-        margin-top: 5px;
-        box-sizing: border-box;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-size: 16px;
-      }
-      button {
-        margin-top: 25px;
-        padding: 12px 20px;
-        width: 100%;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 18px;
-        transition: background-color 0.3s ease;
-      }
-      button:hover {
-        background-color: #0056b3;
-      }
-      #outputUrl {
-        margin-top: 25px;
-        padding: 15px;
-        background-color: #e9ecef;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        word-break: break-all;
-      }
-      #qr-code-container {
-        margin-top: 25px;
-        text-align: center;
-      }
-      #qrcode {
-        margin-top: 15px;
-      }
-      .loading-message {
-        text-align: center;
-        color: #666;
-        font-style: italic;
-        margin-top: 10px;
-      }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  </head>
-  <body>
-    <div class="container">
-      <h1>Generator QR Code Absensi Toko</h1>
-
-      <label for="storeSelect">Pilih Toko:</label>
-      <select id="storeSelect">
-        <option value="" disabled selected>Memuat daftar toko...</option>
-      </select>
-
-      <p class="loading-message" id="loadingMessage"></p>
-      <div id="errorMessage" class="hidden" style="color: red; text-align: center;"></div>
-
-      <button id="generateBtn" onclick="generateQrCode()">Buat QR Code</button>
-
-      <div id="outputUrl" class="hidden">
-        <p><b>URL QR Code:</b></p>
-        <p id="urlText"></p>
-      </div>
-
-      <div id="qr-code-container" class="hidden">
-        <p>QR Code akan muncul di bawah ini.</p>
-        <div id="qrcode"></div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Code Generator Absensi</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f0f2f5;
+      margin: 0;
+    }
+    .container {
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 90%;
+      max-width: 500px;
+    }
+    h1 {
+      color: #333;
+    }
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+      border: 0.25em solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spinner-grow 0.75s linear infinite;
+      margin: 50px auto;
+      color: #007bff;
+    }
+    @keyframes spinner-grow {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .hidden {
+      display: none;
+    }
+    #qrcode-container {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px dashed #ddd;
+      border-radius: 8px;
+    }
+    #qrcode-container img {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>QR Code Generator Absensi</h1>
+    <div id="loading-spinner" class="spinner-border text-primary" role="status">
+      <span class="sr-only">Memuat...</span>
+    </div>
+    
+    <div id="main-content" class="hidden">
+      <p>Pilih toko untuk membuat QR Code Absensi:</p>
+      <select id="storeSelect"></select>
+      <div id="qrcode-container" class="hidden">
+        <p>Pindai QR Code ini untuk Absensi:</p>
+        <img id="qrCodeImage" src="" alt="QR Code Absensi">
       </div>
     </div>
+  </div>
 
-    <script>
-      // GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
-      const appsScriptUrl =
-        "https://script.google.com/macros/s/AKfycbz9rczn07E29LnlK_hT1XizTHm7V_bZnqOq8Cevd0fjNFg7JO63-aSmnCmXTX_kjw9t0g/exec";
+  <script>
+    // Ganti dengan URL Google Apps Script yang telah Anda Deploy
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz9rczn07E29LnlK_hT1XizTHm7V_bZnqOq8Cevd0fjNFg7JO63-aSmnCmXTX_kjw9t0g/exec';
+    // Ganti dengan URL halaman absensi Anda yang telah di-host (contoh: GitHub Pages)
+    const HOSTED_URL = 'https://aal34ckend.github.io/badboy-absence/index.html';
 
-      window.onload = function () {
-        fetchStoresAndPopulateDropdown();
-      };
+    document.addEventListener("DOMContentLoaded", initQrGenerator);
 
-      async function fetchStoresAndPopulateDropdown() {
-        const storeSelect = document.getElementById("storeSelect");
-        const loadingMessage = document.getElementById("loadingMessage");
-        const errorMessage = document.getElementById("errorMessage");
-
-        loadingMessage.innerText = "Mengambil data toko...";
-        errorMessage.classList.add("hidden");
-        storeSelect.disabled = true;
-
-        try {
-          const response = await fetch(`${appsScriptUrl}?api=stores`);
-
-          if (!response.ok) {
-            throw new Error(`Kesalahan Jaringan: ${response.status} ${response.statusText}`);
-          }
-
-          const stores = await response.json();
-          console.log("Respons Apps Script:", stores);
-
-          if (!Array.isArray(stores) || stores.length === 0) {
-            storeSelect.innerHTML =
-              '<option value="" disabled selected>Tidak ada data toko atau format data salah.</option>';
-            throw new Error("Data toko tidak valid atau kosong.");
-          }
-
-          storeSelect.innerHTML = "";
-          stores.forEach((store) => {
-            if (store.id && store.nama_store) {
-              const option = document.createElement("option");
-              option.value = store.id;
-              option.text = store.nama_store + " (" + store.id + ")";
-              storeSelect.appendChild(option);
-            }
-          });
-
-          loadingMessage.innerText = "";
-          storeSelect.disabled = false;
-        } catch (error) {
-          console.error("Kesalahan saat mengambil data toko:", error);
-          storeSelect.innerHTML =
-            '<option value="" disabled selected>Error: Gagal memuat data.</option>';
-          errorMessage.innerText = `Error: Gagal memuat data toko. ${error.message}`;
-          errorMessage.classList.remove("hidden");
-        }
+    async function fetchData(api, params = {}) {
+      const url = new URL(SCRIPT_URL);
+      url.searchParams.set('api', api);
+      for (const key in params) {
+          url.searchParams.set(key, params[key]);
       }
-
-      function generateQrCode() {
-        const storeSelect = document.getElementById("storeSelect");
-        const storeId = storeSelect.value;
-        const outputUrlDiv = document.getElementById("outputUrl");
-        const urlTextP = document.getElementById("urlText");
-        const qrCodeContainer = document.getElementById("qr-code-container");
-        const errorMessage = document.getElementById("errorMessage");
-
-        if (!storeId) {
-          errorMessage.innerText = "Silakan pilih toko terlebih dahulu.";
-          errorMessage.classList.remove("hidden");
-          return;
+      try {
+        const response = await fetch(url.toString());
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        return await response.json();
+      } catch (error) {
+        alert("Gagal memuat data dari API. Pastikan Anda telah mengganti SCRIPT_URL dengan benar.");
+        return null;
+      }
+    }
 
-        // URL QR code akan mengarah ke URL Apps Script dengan parameter storeId
-        const fullUrl = `${appsScriptUrl}?storeId=${storeId}`;
-        
-        urlTextP.innerText = fullUrl;
-        outputUrlDiv.classList.remove("hidden");
-
-        document.getElementById("qrcode").innerHTML = "";
-        qrCodeContainer.classList.remove("hidden");
-
-        new QRCode(document.getElementById("qrcode"), {
-          text: fullUrl,
-          width: 256,
-          height: 256,
-          colorDark: "#000000",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.H,
+    async function initQrGenerator() {
+      const storeSelect = document.getElementById("storeSelect");
+      const qrCodeImage = document.getElementById("qrCodeImage");
+      const qrcodeContainer = document.getElementById("qrcode-container");
+      const loadingSpinner = document.getElementById("loading-spinner");
+      const mainContent = document.getElementById("main-content");
+      
+      const stores = await fetchData('stores');
+      
+      loadingSpinner.classList.add("hidden");
+      mainContent.classList.remove("hidden");
+      
+      if (stores && Array.isArray(stores) && stores.length > 0) {
+        storeSelect.innerHTML = '<option value="">-- Pilih Toko --</option>';
+        stores.forEach(store => {
+          const option = document.createElement("option");
+          option.value = store.id;
+          option.text = store.store;
+          storeSelect.appendChild(option);
         });
+      } else {
+        storeSelect.innerHTML = '<option value="">Tidak ada toko terdaftar.</option>';
       }
-    </script>
-  </body>
+
+      storeSelect.addEventListener("change", () => {
+        const selectedStoreId = storeSelect.value;
+        if (selectedStoreId) {
+          const qrUrl = `${HOSTED_URL}?storeId=${selectedStoreId}`;
+          const qrCodeApiUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(qrUrl)}`;
+          qrCodeImage.src = qrCodeApiUrl;
+          qrcodeContainer.classList.remove("hidden");
+        } else {
+          qrcodeContainer.classList.add("hidden");
+        }
+      });
+    }
+  </script>
+</body>
 </html>
