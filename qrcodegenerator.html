@@ -141,14 +141,13 @@
           storeSelect.disabled = false;
           
           stores.forEach(store => {
-            // Memastikan data toko memiliki properti yang diperlukan
-            if (store.Id && store.nama_store) {
-              const option = document.createElement("option");
-              option.value = store.Id;
-              option.text = store.nama_store + ' (' + store.Id + ')';
-              storeSelect.appendChild(option);
-            }
-          });
+          if (store.id && store.nama_store) {
+            const option = document.createElement("option");
+            option.value = store.id;
+            option.text = store.nama_store + ' (' + store.id + ')';
+            storeSelect.appendChild(option);
+          }
+        });
           
           loadingMessage.innerText = "";
           
