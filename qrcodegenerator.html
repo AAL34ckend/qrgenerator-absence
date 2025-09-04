@@ -275,6 +275,8 @@
         // Generate ZIP & download
         const content = await zip.generateAsync({ type: "blob" });
         saveAs(content, "ALL_QR_CODES.zip");
+
+        overlay.style.display = "none"; // ✅ Sembunyikan loading
       
         alert("✅ Semua QR Code berhasil diunduh dalam 1 file ZIP!");
       }
