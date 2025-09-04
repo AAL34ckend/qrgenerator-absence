@@ -141,10 +141,10 @@
           storeSelect.disabled = false;
           
           stores.forEach(store => {
-          if (store.id && store.nama_store) {
+          if (store.id && store.name) {
             const option = document.createElement("option");
             option.value = store.id;
-            option.text = store.nama_store + ' (' + store.id + ')';
+            option.text = store.name + ' (' + store.id + ')';
             storeSelect.appendChild(option);
           }
         });
