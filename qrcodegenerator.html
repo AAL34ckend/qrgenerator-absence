@@ -142,10 +142,10 @@
           
           stores.forEach(store => {
             // Memastikan data toko memiliki properti yang diperlukan
-            if (store.Id && store.Nama_Store) {
+            if (store.Id && store.nama_store) {
               const option = document.createElement("option");
               option.value = store.Id;
-              option.text = store.Nama_Store + ' (' + store.Id + ')';
+              option.text = store.nama_store + ' (' + store.Id + ')';
               storeSelect.appendChild(option);
             }
           });
