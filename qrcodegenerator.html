@@ -88,6 +88,8 @@
       
       <p class="loading-message" id="loadingMessage"></p>
 
+      <button onclick="downloadAllQRCodes()">Download Semua QR Code</button>
+
       <button onclick="generateQrCode()">Buat QR Code</button>
 
       <div id="outputUrl">
@@ -184,6 +186,55 @@
           correctLevel: QRCode.CorrectLevel.H,
         });
       }
+
+      async function downloadAllQRCodes() {
+  const storeSelect = document.getElementById("storeSelect");
+  const options = storeSelect.options;
+
+  if (options.length === 0) {
+    alert("Belum ada data toko untuk dibuat QR Code.");
+    return;
+  }
+
+  for (let i = 0; i < options.length; i++) {
+    const storeId = options[i].value;
+    const storeName = options[i].text;
+    if (!storeId) continue;
+
+    const fullUrl = `${githubPageUrl}?storeId=${storeId}`;
+
+    // Bikin QR Code sementara di canvas
+    const qrContainer = document.createElement("div");
+    const qrCode = new QRCode(qrContainer, {
+      text: fullUrl,
+      width: 256,
+      height: 256,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H,
+    });
+
+    // Tunggu QR Code jadi
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const img = qrContainer.querySelector("img");
+    if (img) {
+      // Bikin link download otomatis
+      const link = document.createElement("a");
+      link.href = img.src;
+      link.download = `QR-${storeId}.png`; // nama file
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Bersihin container sementara
+    qrContainer.innerHTML = "";
+  }
+
+  alert("✅ Semua QR Code berhasil diunduh!");
+}
+
     </script>
   </body>
 </html>
