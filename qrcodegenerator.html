@@ -76,6 +76,9 @@
       }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
   </head>
   <body>
     <div class="container">
@@ -188,52 +191,60 @@
       }
 
       async function downloadAllQRCodes() {
-  const storeSelect = document.getElementById("storeSelect");
-  const options = storeSelect.options;
+        const storeSelect = document.getElementById("storeSelect");
+        const options = storeSelect.options;
+      
+        if (options.length === 0) {
+          alert("Belum ada data toko untuk dibuat QR Code.");
+          return;
+        }
+      
+        const zip = new JSZip();
+      
+        for (let i = 0; i < options.length; i++) {
+          const storeId = options[i].value;
+          const storeName = options[i].text;
+          if (!storeId) continue;
+      
+          const fullUrl = `${githubPageUrl}?storeId=${storeId}`;
+      
+          // Container QR sementara
+          const qrContainer = document.createElement("div");
+          const qrCode = new QRCode(qrContainer, {
+            text: fullUrl,
+            width: 256,
+            height: 256,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H,
+          });
+      
+          // Tunggu QR render
+          await new Promise(resolve => setTimeout(resolve, 500));
+      
+          const img = qrContainer.querySelector("img");
+          if (img) {
+            // Ambil data base64 dari img
+            const base64Data = img.src.split(",")[1];
+      
+            // Nama file pakai nama store uppercase
+            const safeName = storeName.split("(")[0].trim().toUpperCase().replace(/[^A-Z0-9]/g, "_");
+            const fileName = `${safeName}.png`;
+      
+            // Tambahin ke zip
+            zip.file(fileName, base64Data, { base64: true });
+          }
+      
+          qrContainer.innerHTML = "";
+        }
+      
+        // Generate ZIP & download
+        const content = await zip.generateAsync({ type: "blob" });
+        saveAs(content, "ALL_QR_CODES.zip");
+      
+        alert("✅ Semua QR Code berhasil diunduh dalam 1 file ZIP!");
+      }
 
-  if (options.length === 0) {
-    alert("Belum ada data toko untuk dibuat QR Code.");
-    return;
-  }
-
-  for (let i = 0; i < options.length; i++) {
-    const storeId = options[i].value;
-    const storeName = options[i].text;
-    if (!storeId) continue;
-
-    const fullUrl = `${githubPageUrl}?storeId=${storeId}`;
-
-    // Bikin QR Code sementara di canvas
-    const qrContainer = document.createElement("div");
-    const qrCode = new QRCode(qrContainer, {
-      text: fullUrl,
-      width: 256,
-      height: 256,
-      colorDark: "#000000",
-      colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.H,
-    });
-
-    // Tunggu QR Code jadi
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const img = qrContainer.querySelector("img");
-    if (img) {
-      // Bikin link download otomatis
-      const link = document.createElement("a");
-      link.href = img.src;
-      link.download = `QR-${storeId}.png`; // nama file
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    // Bersihin container sementara
-    qrContainer.innerHTML = "";
-  }
-
-  alert("✅ Semua QR Code berhasil diunduh!");
-}
 
     </script>
   </body>
