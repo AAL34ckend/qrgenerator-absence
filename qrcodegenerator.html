@@ -4,142 +4,80 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Generator QR Code Absensi Toko</title>
+    <!-- Tailwind CSS CDN untuk styling yang modern dan responsif -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font "Inter" untuk tampilan yang bersih -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap">
     <style>
       body {
-        font-family: Arial, sans-serif;
-        padding: 20px;
-        max-width: 600px;
-        margin: auto;
-        background-color: #f4f4f9;
-        color: #333;
-      }
-      .container {
-        background-color: #fff;
-        padding: 25px;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      }
-      h1 {
-        text-align: center;
-        color: #007bff;
-      }
-      label {
-        display: block;
-        margin-top: 15px;
-        font-weight: bold;
-      }
-      select,
-      input[type="text"] {
-        width: 100%;
-        padding: 10px;
-        margin-top: 5px;
-        box-sizing: border-box;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-size: 16px;
-      }
-      button {
-        margin-top: 25px;
-        padding: 12px 20px;
-        width: 100%;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 18px;
-        transition: background-color 0.3s ease;
-      }
-      button:hover {
-        background-color: #0056b3;
-      }
-      #outputUrl {
-        margin-top: 25px;
-        padding: 15px;
-        background-color: #e9ecef;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        word-break: break-all;
-      }
-      #qr-code-container {
-        margin-top: 25px;
-        text-align: center;
-      }
-      #qrcode {
-        margin-top: 15px;
-      }
-      .loading-message {
-          text-align: center;
-          color: #666;
-          font-style: italic;
-          margin-top: 10px;
-      }
-      #loadingOverlay {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.6);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        font-size: 1.5rem;
-        font-weight: bold;
-        z-index: 9999;
-        display: none;
-        flex-direction: column;
-      }
-      .spinner {
-        border: 6px solid rgba(255,255,255,0.3);
-        border-top: 6px solid #fff;
-        border-radius: 50%;
-        width: 60px;
-        height: 60px;
-        animation: spin 1s linear infinite;
-        margin-bottom: 15px;
-      }
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        font-family: 'Inter', sans-serif;
+        background-color: #f3f4f6;
       }
     </style>
+  </head>
+  <body class="p-4 sm:p-8 flex flex-col items-center justify-center min-h-screen text-gray-800">
+    <div id="loadingOverlay" class="fixed top-0 left-0 right-0 bottom-0 bg-gray-900 bg-opacity-70 flex flex-col justify-center items-center text-white text-2xl z-50 hidden transition-opacity duration-300">
+      <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-white mb-4"></div>
+      Menyiapkan unduhan...
+    </div>
+
+    <div class="container bg-white p-6 sm:p-10 rounded-xl shadow-lg w-full max-w-lg">
+      <h1 class="text-3xl sm:text-4xl font-bold text-center text-blue-600 mb-6">Generator QR Code Absensi Toko</h1>
+
+      <!-- Status Message Area -->
+      <div id="statusMessage" class="hidden p-3 rounded-lg text-center mb-4 transition-all duration-300"></div>
+
+      <label for="storeSelect" class="block text-sm font-semibold mb-2">Pilih Toko:</label>
+      <select id="storeSelect" class="w-full p-3 rounded-lg border border-gray-300 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="" disabled selected>Memuat daftar toko...</option>
+      </select>
+      
+      <p class="loading-message text-center text-gray-500 italic" id="loadingMessage"></p>
+
+      <button onclick="downloadAllQRCodes()" class="w-full mt-4 p-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300 transform hover:scale-105">
+        Download Semua QR Code
+      </button>
+
+      <button onclick="generateQrCode()" class="w-full mt-4 p-3 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition-colors duration-300 transform hover:scale-105">
+        Buat QR Code
+      </button>
+
+      <div id="outputUrl" class="mt-6 p-4 bg-gray-100 border border-gray-200 rounded-lg word-break-all text-sm">
+        <p>URL akan muncul di sini.</p>
+      </div>
+
+      <div id="qr-code-container" class="mt-6 text-center">
+        <p>QR Code akan muncul di bawah ini.</p>
+        <div id="qrcode" class="mt-4 flex justify-center"></div>
+      </div>
+    </div>
+
+    <!-- Pustaka JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-  </head>
-  <body>
-    <div id="loadingOverlay">
-      <div class="spinner"></div>
-      Menyiapkan unduhan...
-    </div>
-    <div class="container">
-      <h1>Generator QR Code Absensi Toko</h1>
-
-      <label for="storeSelect">Pilih Toko:</label>
-      <select id="storeSelect">
-        <option value="" disabled selected>Memuat daftar toko...</option>
-      </select>
-      
-      <p class="loading-message" id="loadingMessage"></p>
-
-      <button onclick="downloadAllQRCodes()">Download Semua QR Code</button>
-
-      <button onclick="generateQrCode()">Buat QR Code</button>
-
-      <div id="outputUrl">
-        <p>URL akan muncul di sini.</p>
-      </div>
-
-      <div id="qr-code-container">
-        <p>QR Code akan muncul di bawah ini.</p>
-        <div id="qrcode"></div>
-      </div>
-    </div>
-
     <script>
       // GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
       const appsScriptUrl = "https://script.google.com/macros/s/AKfycbz9rczn07E29LnlK_hT1XizTHm7V_bZnqOq8Cevd0fjNFg7JO63-aSmnCmXTX_kjw9t0g/exec";
-      const githubPageUrl = "https://aal34ckend.github.io/badboy-absence/";
+      
+      // Mengubah URL tujuan QR Code menjadi URL Apps Script itu sendiri
+      const githubPageUrl = appsScriptUrl;
+
+      // Fungsi untuk menampilkan pesan status (menggantikan alert)
+      function showStatusMessage(message, type = 'info') {
+          const statusDiv = document.getElementById("statusMessage");
+          statusDiv.textContent = message;
+          statusDiv.className = 'p-3 rounded-lg text-center mb-4 transition-all duration-300'; // Reset kelas
+          if (type === 'success') {
+              statusDiv.classList.add('bg-green-100', 'text-green-800', 'border', 'border-green-200');
+          } else if (type === 'error') {
+              statusDiv.classList.add('bg-red-100', 'text-red-800', 'border', 'border-red-200');
+          } else { // info
+              statusDiv.classList.add('bg-blue-100', 'text-blue-800', 'border', 'border-blue-200');
+          }
+          statusDiv.classList.remove('hidden');
+      }
 
       window.onload = function() {
         fetchStoresAndPopulateDropdown();
@@ -152,7 +90,8 @@
         loadingMessage.innerText = "Mengambil data toko...";
         
         try {
-          const response = await fetch(`${appsScriptUrl}?storeId=all`); 
+          // Perbaikan: Menambahkan parameter `page=data` agar cocok dengan fungsi doGet()
+          const response = await fetch(`${appsScriptUrl}?page=data&storeId=all`); 
           
           if (!response.ok) {
             throw new Error(`Kesalahan Jaringan: ${response.status} ${response.statusText}`);
@@ -161,14 +100,14 @@
           const stores = await response.json();
           console.log("Respons Apps Script (objek JSON):", stores);
           
-          // Memastikan respons adalah array
           if (!Array.isArray(stores)) {
-             throw new Error("Respons Apps Script bukan array JSON.");
+              throw new Error("Respons Apps Script bukan array JSON.");
           }
           
           if (stores.length === 0) {
             storeSelect.innerHTML = '<option value="" disabled selected>Tidak ada data toko.</option>';
             loadingMessage.innerText = "";
+            showStatusMessage("Tidak ada data toko yang ditemukan.", "info");
             return;
           }
           
@@ -176,13 +115,13 @@
           storeSelect.disabled = false;
           
           stores.forEach(store => {
-          if (store.id && store.name) {
-            const option = document.createElement("option");
-            option.value = store.id;
-            option.text = store.name + ' (' + store.id + ')';
-            storeSelect.appendChild(option);
-          }
-        });
+            if (store.id && store.name) {
+              const option = document.createElement("option");
+              option.value = store.id;
+              option.text = store.name + ' (' + store.id + ')';
+              storeSelect.appendChild(option);
+            }
+          });
           
           loadingMessage.innerText = "";
           
@@ -191,6 +130,8 @@
           storeSelect.innerHTML = '<option value="" disabled selected>Error: Gagal memuat data.</option>';
           loadingMessage.innerText = `Error: Gagal memuat data toko. ${error.message}`;
           storeSelect.disabled = true;
+          // Pesan yang lebih spesifik untuk membantu pengguna
+          showStatusMessage(`Gagal memuat data toko. Ini mungkin disebabkan oleh masalah dengan URL Apps Script atau izinnya. Pastikan URL Web App sudah benar dan di-deploy dengan izin yang sesuai ("Siapa saja" atau "Siapa saja, bahkan anonim").`, "error");
         }
       }
 
@@ -199,9 +140,12 @@
         const storeId = storeSelect.value;
         
         if (!storeId) {
-          alert("Silakan pilih toko terlebih dahulu.");
+          showStatusMessage("Silakan pilih toko terlebih dahulu.", "error");
           return;
         }
+
+        // Sembunyikan pesan status sebelumnya
+        document.getElementById("statusMessage").classList.add("hidden");
 
         const fullUrl = `${githubPageUrl}?storeId=${storeId}`;
 
@@ -218,32 +162,32 @@
           colorLight: "#ffffff",
           correctLevel: QRCode.CorrectLevel.H,
         });
+        showStatusMessage("QR Code berhasil dibuat!", "success");
       }
 
       async function downloadAllQRCodes() {
         const storeSelect = document.getElementById("storeSelect");
         const options = storeSelect.options;
-      
+        
         if (options.length === 0) {
-          alert("Belum ada data toko untuk dibuat QR Code.");
+          showStatusMessage("Belum ada data toko untuk dibuat QR Code.", "error");
           return;
         }
-      
+        
         const overlay = document.getElementById("loadingOverlay");
-        overlay.style.display = "flex"; // 🔥 Tampilkan loading
+        overlay.classList.remove("hidden"); // Tampilkan loading
         
         const zip = new JSZip();
-      
+        
         for (let i = 0; i < options.length; i++) {
           const storeId = options[i].value;
           const storeName = options[i].text;
           if (!storeId) continue;
-      
+        
           const fullUrl = `${githubPageUrl}?storeId=${storeId}`;
-      
-          // Container QR sementara
+        
           const qrContainer = document.createElement("div");
-          const qrCode = new QRCode(qrContainer, {
+          new QRCode(qrContainer, {
             text: fullUrl,
             width: 256,
             height: 256,
@@ -251,36 +195,30 @@
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.H,
           });
-      
-          // Tunggu QR render
+        
+          // Tunggu QR Code di-render.
+          // Ini adalah solusi sementara; idealnya, gunakan callback `onrender` jika pustaka mendukungnya.
           await new Promise(resolve => setTimeout(resolve, 500));
-      
+        
           const img = qrContainer.querySelector("img");
           if (img) {
-            // Ambil data base64 dari img
             const base64Data = img.src.split(",")[1];
-      
-            // Nama file pakai nama store uppercase
+        
             const safeName = storeName.split("(")[0].trim().toUpperCase().replace(/[^A-Z0-9]/g, "_");
             const fileName = `${safeName}.png`;
-      
-            // Tambahin ke zip
+        
             zip.file(fileName, base64Data, { base64: true });
           }
-      
+        
           qrContainer.innerHTML = "";
         }
-      
-        // Generate ZIP & download
+        
         const content = await zip.generateAsync({ type: "blob" });
         saveAs(content, "ALL_QR_CODES.zip");
 
-        overlay.style.display = "none"; // ✅ Sembunyikan loading
-      
-        alert("✅ Semua QR Code berhasil diunduh dalam 1 file ZIP!");
+        overlay.classList.add("hidden"); // Sembunyikan loading
+        showStatusMessage("✅ Semua QR Code berhasil diunduh dalam 1 file ZIP!", "success");
       }
-
-
     </script>
   </body>
 </html>
